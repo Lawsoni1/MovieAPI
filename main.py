@@ -1,20 +1,35 @@
-import config
+"""Movie Watchlist program."""
+
+try:
+    import config
+except ImportError:
+    print(
+        "Config file not found, create a new Python file called 'config.py' with the constant 'API_KEY' equal to your "
+        "API key from omdbapi as a string")
+    config = None
 try:
     import requests
 except ImportError:
-    print("The 'requests' library is not installed. Please install it using 'pip install requests' before running this program.")
+    print(
+        "The 'requests' library is not installed. Please install it using 'pip install requests' before running this "
+        "program.")
+    requests = None
 
 
 class MovieAPI:
+    """Class for interacting with OMDBAPI."""
+
     def __init__(self, base_url, search_url, title_url):
+        """Initialize the MovieAPI class with base URLs."""
         self.base_url = base_url
         self.search_url = search_url
         self.title_url = title_url
 
     def make_request(self, url):
-        print("Making request...")
+        """Make a request to the API."""
         response = requests.get(url)
-        if response.status_code == 200:
+        if response.status_code == 200:  # If somehow the URL is invalid or isn't working, this code prints out
+            # whether the request was successful or not.
             json_data = response.json()
             return json_data
         else:
@@ -22,61 +37,67 @@ class MovieAPI:
             return None
 
     def search_movies_by_title(self, title):
-        print(f"Finding movie(s) with the name {title}...")
-        url = self.base_url + self.search_url + f"={title}"
-        search_data = self.make_request(url)
+        """Create a URL to search for movies with the same name as 'title'."""
+        url = self.base_url + self.search_url + f"={title}"  # Create URL
+        search_data = self.make_request(url)  # Send URL to make request method which then returns the data.
         return search_data
-    
+
     def get_movie_by_title(self, title):
-        print(f"Finding information about {title}...")
-        url = self.base_url + self.title_url + f"={title}"
-        search_data = self.make_request(url)
-        return search_data
+        """Create a URL to get movie details by title."""
+        url = self.base_url + self.title_url + f"={title}"  # Create URL
+        title_data = self.make_request(url)  # Send URL to make request method which then returns the data.
+        return title_data
 
 
 class WatchList:
+    """Class for managing a watch list of movies."""
+
     def __init__(self):
+        """Initialize an empty watch list."""
         self.watch_list = []
 
     def show_all(self):
-        print("")
+        """Show all movies in the watch list."""
         for index, movie in enumerate(self.watch_list, start=1):
             print(f"{index}. {movie}")
 
     def add_movie(self, title):
-        if 'title' in self.watch_list:
+        """Add a movie to the watch list by appending it to the list watch_list."""
+        if title in self.watch_list:
             print(f"\n{title} is already in your watchlist!")
         else:
             self.watch_list.append(title)
-            print(f"\n{title} has been added to your watchlist!")
+            print(
+                f"\n{title} has been added to your watchlist!")  # This code checks whether the movie the user tries
+            # to append already exists in the watchlist.
 
     def remove_movie(self, title):
+        """Remove a movie from the watch list."""
         self.watch_list.remove(title)
         print(f"\n{title} has been removed from your watchlist!")
 
 
 def search_movies(movie_api, watch_list):
-    print("\nEnter Movie Name")
-    title = input(": ")
-    print("")
+    """Search for movies and manage watchlist."""
+    title = input("\nEnter Movie Name: ")
     search_data = movie_api.search_movies_by_title(title)
-    if 'Search' in search_data:
-        print("")
+    if 'Search' in search_data:  # Checks if the dictionary 'Search' is returned from API call, if it isn't, then an
+        # error occurred and the program prints an error statement.
         count = 0
-        movie_choices = []
+        movie_choices = []  # Empty list that stores all the returned data from API call, so it can be interacted
+        # with later
         for movie in search_data['Search']:
             count += 1
             movie_choices.append(movie['Title'])
             print(f"{count}. {movie['Title']}")
         print(f"{len(movie_choices) + 1}. Exit")
-        print("\nSelect Movie by Number or Exit")
         selected_movie = get_int(": ", "Invalid input, try again", 0, len(movie_choices) + 2)
-        print("")
         if selected_movie == len(movie_choices) + 1:
             print("")
             main()
         else:
-            title_data = movie_api.get_movie_by_title(movie_choices[selected_movie - 1])
+            title_data = movie_api.get_movie_by_title(
+                movie_choices[selected_movie - 1])  # Takes title name from movie and uses it in get_movie_by_title
             if title_data is not None:
                 movie_data(title_data)
                 print("\nDo You Wish to Add This Movie to Your Watchlist?")
@@ -84,12 +105,14 @@ def search_movies(movie_api, watch_list):
                 print("2. No")
                 choice = get_int(": ", "Invalid input, try again", 0, 3)
                 if choice == 1:
-                    watch_list.add_movie(movie_choices[selected_movie - 1])
+                    watch_list.add_movie(
+                        movie_choices[selected_movie - 1])  # Appends selection by using add_movie method
     else:
         print("\nMovie not found!")
 
 
 def movie_data(title_data):
+    """Display movie details."""
     print("\n|Movie Data|")
     if title_data is not None:
         print(f"\nTitle: {title_data['Title']}")
@@ -109,10 +132,11 @@ def movie_data(title_data):
 
 
 def view_watch_list(movie_api, watch_list):
+    """View and manage the watch list."""
     while True:
         if watch_list.watch_list:
             print("\n|Watchlist|")
-            watch_list.show_all()
+            watch_list.show_all()  # Calls WatchList function and show_all method
             print("\nDo you wish to add or remove a movie?")
             print("1. Add")
             print("2. Remove")
@@ -136,14 +160,17 @@ def view_watch_list(movie_api, watch_list):
             print("\nYour watchlist is empty!")
             break
 
+
 def main():
-    movie_api = MovieAPI(f"http://www.omdbapi.com/?apikey={config.API_KEY}&", "s", "t")
-    watch_list = WatchList()
+    """Main function to run the program."""
+    movie_api = MovieAPI(f"http://www.omdbapi.com/?apikey={config.API_KEY}&", "s",
+                         "t")  # Instance variable of MovieAPI class
+    watch_list = WatchList()  # Instance variable of WatchList class
     while True:
         print("\n|Movie Watch List|")
-        print("\n1. Search Movies By Title")
+        print("1. Search Movies By Title")
         print("2. View Watch List")
-        print("3. Exit ")
+        print("3. Exit")
         choice = get_int(": ", "Invalid input, try again", 0, 4)
         if choice == 1:
             search_movies(movie_api, watch_list)
@@ -154,6 +181,7 @@ def main():
 
 
 def get_int(msg, msg2, low, high):
+    """Validation function to get an integer input within a range to validate all input from the user."""
     while True:
         try:
             num = int(input(msg))
